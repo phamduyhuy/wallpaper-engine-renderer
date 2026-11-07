@@ -309,6 +309,23 @@ void TestWorldSpaceGravityUsesOwnerBasis() {
 } // namespace
 
 int main() {
+    {
+        Scene scene;
+        scene.paritileSys->gener = std::make_unique<DummyRawGener>();
+        auto subsystem = MakeSubsystem(scene, ParticleSubSystem::SpawnType::STATIC);
+        double simulated = 0;
+        int emitter_calls = 0;
+        subsystem->AddEmitter([&](auto&, auto&, auto, uint32_t, double dt) {
+            simulated += dt;
+            ++emitter_calls;
+        });
+        scene.paritileSys->subsystems.push_back(std::move(subsystem));
+        scene.PassFrameTime(2.0);
+        scene.paritileSys->Emitt();
+        assert(simulated > 0 && simulated <= 1.0 / 15.0);
+        assert(emitter_calls == 1); // Preserve one-per-frame emitter semantics.
+        assert(scene.frameTime == 2.0 && scene.elapsingTime == 2.0);
+    }
     TestChildInheritsOnlyLayerOpacityAndTint();
     TestStaticChildOnlyAllocatesOneInstance();
     TestRuntimeSizeOverrideDoesNotCompound();

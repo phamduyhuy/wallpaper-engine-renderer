@@ -468,9 +468,15 @@ void ParticleSubSystem::Emitt() {
 }
 
 void ParticleSystem::Emitt() {
+    // Scene/script clocks follow elapsed wall time, but particle operators are
+    // single-step integrators. Bound their step after a render stall instead of
+    // killing newly emitted particles or replaying one-per-frame emitters.
+    const double elapsed = scene.frameTime;
+    scene.frameTime = std::clamp(elapsed, 0.0, 1.0 / 15.0);
     for (auto& el : subsystems) {
         el->Emitt();
     }
+    scene.frameTime = elapsed;
 }
 
 void ParticleSystem::SetMousePos(float x, float y) { m_mouse_pos = { x, y }; }
